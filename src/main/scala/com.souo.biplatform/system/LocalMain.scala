@@ -5,17 +5,22 @@ import com.typesafe.config.ConfigFactory
 import com.souo.biplatform.HttpService
 
 /**
- * Created by souo on 2017/1/3
+ * @author souo
  */
-object LocalMain extends App with HttpService {
+object LocalMain extends HttpService {
 
-  implicit val system = ActorSystem("designer", ConfigFactory.load("local"))
+  def main(args: Array[String]): Unit = {
+    implicit val system = ActorSystem("designer", ConfigFactory.load("local"))
 
-  val users = system.actorOf(LocalUsers.props, LocalUsers.name)
+    val cubeNode = system.actorOf(CubeNode.props, CubeNode.name)
 
-  val cubeNode = system.actorOf(CubeNode.props, CubeNode.name)
+    val dsNode = system.actorOf(DataSourceNode.props, DataSourceNode.name)
 
-  val dsNode = system.actorOf(DataSourceNode.props, DataSourceNode.name)
+    val queryRouteNode = system.actorOf(QueryRouteNode.props(cubeNode, dsNode))
 
-  startService(cubeNode, users, dsNode)
+    val users = system.actorOf(LocalUsers.props(queryRouteNode), LocalUsers.name)
+
+    startService(cubeNode, users, dsNode)
+  }
+
 }

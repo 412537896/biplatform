@@ -1,6 +1,6 @@
 package com.souo.biplatform.system.cluster
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.cluster.Cluster
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
@@ -10,7 +10,7 @@ import com.souo.biplatform.common.util.IntParam
 import scala.concurrent.duration._
 
 /**
- * Created by souo on 2017/1/3
+ * @author souo
  */
 object ClusterMain extends HttpService
     with StrictLogging {
@@ -58,17 +58,14 @@ object ClusterMain extends HttpService
 
     val shardUsers = new UserNodeShard {
       override val system: ActorSystem = designerSystem
+      override val queryRouteNode: ActorRef = null
     }.shardUser
-
-    val dsNode = new DSNodeSingleton {
-      override val system: ActorSystem = designerSystem
-    }.dsNode
 
     designerSystem.actorOf(Props(classOf[ClusterListen]), "clusterListen")
 
     Cluster(designerSystem).registerOnMemberUp {
       logger.info("All cluster nodes are up!")
-      startService(cubeNode, shardUsers, dsNode)
+      //      startService(cubeNode, shardUsers)
     }
 
     Cluster(designerSystem).registerOnMemberRemoved {
@@ -102,7 +99,7 @@ object ClusterMain extends HttpService
     case ("--help") :: tail ⇒
       printUsageAndExit(0)
 
-    case Nil ⇒ // No-op
+    case Nil ⇒ //
     case _ ⇒
       printUsageAndExit(1)
   }
@@ -115,9 +112,9 @@ object ClusterMain extends HttpService
         "  -i HOST, --ip HOST     Hostname to listen on (deprecated, please use --host or -h) \n" +
         "  -h HOST, --host HOST   Hostname to listen on\n" +
         "  -p PORT, --port PORT   Port to listen on (default: 0)\n" +
-        "  --http-port PORT       Port for http Server)\n"
+        "  --http-port PORT       Port for http Server，note:" +
+        " If you set this parameter, an http service use this port will start, otherwise it will not start )\n"
     )
     System.exit(exitCode)
   }
-
 }

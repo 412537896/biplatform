@@ -36,6 +36,7 @@ compileScalastyle := org.scalastyle.sbt.ScalastylePlugin.scalastyle
 scalacOptions ++= Seq(
   "-deprecation",
   "-unchecked",
+  "encode","utf-8",
   "-feature",
   "-language:implicitConversions",
   "-language:postfixOps",
@@ -91,8 +92,6 @@ mappings in Universal := {
 mappings in Universal ++= {
   contentOf("script").map{s => s._1 -> ("bin/" + s._2)}
 }
-//需要的话  打包jdk1.8
-//mappings in Universal ++= directory("data/jdk1.8.0_121")
 
 scriptClasspath := Seq((assemblyJarName in assembly).value)
 
@@ -100,28 +99,23 @@ scriptClasspath := Seq((assemblyJarName in assembly).value)
 mappings in (Compile, packageDoc) := Seq()
 
 
-lazy val zip = taskKey[Unit]("Packaging zip  file and move it to deploy ")
-
-zip := {
-  val from = (packageBin in Universal).value
-  val to = baseDirectory.value / "deploy" / from.getName
-  if (to.delete()){
-    println(s"delete old file ${to.getName}")
-  }
-  IO.move(from, to)
+assemblyMergeStrategy in assembly := {
+  case PathList("javax", "servlet", xs@_*)          => MergeStrategy.first
+  case PathList("com", "fasterxml", xs@_*)          => MergeStrategy.first
+  case PathList("com", "google", "protobuf", xs@_*) => MergeStrategy.first
+  case PathList("org", "apache", "calcite", xs@_*) => MergeStrategy.first
+  case PathList("org", "apache", "commons", xs@_*) => MergeStrategy.first
+  case PathList("org", "slf4j", xs@_*) => MergeStrategy.first
+  case PathList(ps@_*) if ps.last endsWith ".html" => MergeStrategy.first
+  case "application.conf" => MergeStrategy.concat
+  case "unwanted.txt" => MergeStrategy.discard
+  case x =>
+    val oldStrategy = (assemblyMergeStrategy in assembly).value
+    oldStrategy(x)
 }
 
 
-lazy val tgz = taskKey[Unit]("Packaging  tgz  file and move it  deploy ")
-
-tgz := {
-  val from = (packageZipTarball in Universal).value
-  val to = baseDirectory.value / "deploy" / from.getName
-  if (to.delete()){
-    println(s"delete old file ${to.getName}")
-  }
-  IO.move(from, to)
-}
-
+addCommandAlias("zip", "universal:packageBin")
+addCommandAlias("tgz", "universal:packageZipTarball")
 
 

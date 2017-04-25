@@ -4,7 +4,7 @@ import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 
 /**
- * Created by souo on 2017/1/3
+ * @author souo
  */
 class SomeSerializer extends Serializer[Some[_]] {
   override def write(kryo: Kryo, output: Output, t: Some[_]): Unit = {

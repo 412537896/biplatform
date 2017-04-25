@@ -5,7 +5,7 @@ import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
 
 /**
- * Created by souo on 2017/1/3
+ * @author souo
  */
 class ClusterListen extends Actor with ActorLogging {
   val cluster = Cluster(context.system)

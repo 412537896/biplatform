@@ -7,8 +7,10 @@ object Version {
   val circeVersion = "0.6.1"
   val akkaV = "2.4.14"
   val akkaHttpV = "10.0.0"
-  val ficusV = "1.4.0"
+  val ficusV = "1.2.1"
   val catsV = "0.8.1"
+  val swaggerVersion = "1.5.12"
+  val kylinVersion = "1.6.0"
 }
 
 object Libary {
@@ -17,12 +19,21 @@ object Libary {
 
   val cats = "org.typelevel" %% "cats" % catsV
 
+  val kylinJdbc = "org.apache.kylin" %  "kylin-jdbc" % kylinVersion
+
+  //  val elastic4sCore=  "com.sksamuel.elastic4s"  %% "elastic4s-core" % "1.7.0"
+
   val guava = "com.google.guava" % "guava" % "18.0"
   val commonsIo = "commons-io" % "commons-io" % "2.4"
-  val slf4jApi = "org.slf4j" % "slf4j-api" % slf4jVersion
-  val slf4jLog4j12 = "org.slf4j" % "slf4j-log4j12" % slf4jVersion
+
+  val slf4j = Seq(
+    "org.slf4j" % "slf4j-api",
+    "org.slf4j" % "slf4j-log4j12"
+  ).map(_ % slf4jVersion)
+
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingVersion
-  val loggingStack = Seq(slf4jApi, slf4jLog4j12, scalaLogging)
+
+  val loggingStack = Seq(slf4j, Seq(scalaLogging)).flatten
 
   val typesafeConfig = "com.typesafe" % "config" % "1.3.0"
   val ficus = "com.iheart" %% "ficus" % ficusV
@@ -30,12 +41,11 @@ object Libary {
   val jodaTime = "joda-time" % "joda-time" % "2.8.2"
   val jodaConvert = "org.joda" % "joda-convert" % "1.7"
 
-  val circeCore = "io.circe" %% "circe-core" % circeVersion
-  val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
-  val circeJawn = "io.circe" %% "circe-jawn" % circeVersion
-  val circe = Seq(circeCore, circeGeneric, circeJawn)
+  val circe = Seq("io.circe" %% "circe-core",
+    "io.circe" %% "circe-generic",
+    "io.circe" %% "circe-jawn"
+  ).map(_ % circeVersion)
 
-  val javaxMailSun = "com.sun.mail" % "javax.mail" % "1.5.5"
 
   val slick = "com.typesafe.slick" %% "slick" % slickVersion
   val slickHikari = ("com.typesafe.slick" %% "slick-hikaricp" % slickVersion)
@@ -51,33 +61,48 @@ object Libary {
 
   val sigarLoader = "io.kamon" % "sigar-loader" % "1.6.6-rev002"
   val akkaKryo = "com.github.romix.akka" %% "akka-kryo-serialization" % "0.5.0"
-  val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % akkaV
-  val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaV
-  val akkaRemote = "com.typesafe.akka" %% "akka-remote" % akkaV
-  val akkaPersistence = "com.typesafe.akka" %% "akka-persistence" % akkaV
+
+  val akka = Seq(
+    "com.typesafe.akka" %% "akka-slf4j",
+    "com.typesafe.akka" %% "akka-actor",
+    "com.typesafe.akka" %% "akka-remote",
+    "com.typesafe.akka" %% "akka-persistence",
+    "com.typesafe.akka" %% "akka-cluster",
+    "com.typesafe.akka" %% "akka-cluster-sharding",
+    "com.typesafe.akka" %% "akka-cluster-metrics",
+    "com.typesafe.akka" %% "akka-cluster-tools"
+  ).map(_ % akkaV)
+
+  val akkaHttp = Seq(
+    "com.typesafe.akka" %% "akka-http",
+    "com.typesafe.akka" %% "akka-http-core"
+  ).map(_ % akkaHttpV) :+ "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % Test
+
   val levelDb = "org.iq80.leveldb" % "leveldb" % "0.7"
   val levelDbJni = "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
   val akkaPersistenceJdbc = "com.github.dnvriend" %% "akka-persistence-jdbc" % "2.6.12"
-  val akkaPersistenceStack = Seq(akkaPersistence, levelDb, levelDbJni, akkaPersistenceJdbc)
-  val akkaCluster = "com.typesafe.akka" %% "akka-cluster" % akkaV
-  val akkaClusterSharding = "com.typesafe.akka" %% "akka-cluster-sharding" % akkaV
-  val akkaClusterMetrics = "com.typesafe.akka" %% "akka-cluster-metrics" % akkaV
-  val akkaClusterTools = "com.typesafe.akka" %% "akka-cluster-tools" % akkaV
-  val akkaMultiNodeTest = "com.typesafe.akka" %% "akka-multi-node-testkit" % akkaV % Test
-  val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpV
-  val akkaHttpCore = "com.typesafe.akka" %% "akka-http-core" % akkaHttpV
-  val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV
+  val akkaPersistenceStack = Seq(levelDb, levelDbJni, akkaPersistenceJdbc)
+
 
   val akkaHttpSession = "com.softwaremill.akka-http-session" %% "core" % "0.3.0"
 
-  val akkaHttpStack = Seq(akkaHttpCore, akkaHttpTestkit, akkaHttpSession)
-  val akkaClusterStack = Seq(akkaCluster, akkaClusterSharding,
-    akkaClusterMetrics, akkaClusterTools, akkaMultiNodeTest, sigarLoader)
 
-  val akkaStack = {
-    Seq(akkaActor, akkaRemote, akkaKryo, akkaSlf4j) ++
-      akkaHttpStack ++ akkaClusterStack ++ akkaPersistenceStack
-  }
+  val akkaStack = Seq(
+    akka,
+    akkaHttp,
+    akkaPersistenceStack,
+    Seq(akkaHttpSession,
+      sigarLoader,
+      akkaKryo)).flatten
+
+
+  val swaggerStack =
+    Seq("io.swagger" % "swagger-core",
+      "io.swagger" % "swagger-annotations",
+      "io.swagger" % "swagger-models",
+      "io.swagger" % "swagger-jaxrs").map(_ % swaggerVersion) ++
+      Seq("io.swagger" %% "swagger-scala-module" % "1.0.3",
+        "io.github.swagger2markup" % "swagger2markup" % "1.3.1")
 }
 
 object Dependencies {
@@ -90,9 +115,9 @@ object Dependencies {
     ficus,
     jodaTime,
     jodaConvert,
-    javaxMailSun,
-    commonsIo
-  ) ++ unitTestingStack
+    commonsIo,
+    kylinJdbc
+  ) ++ unitTestingStack ++ swaggerStack
 
   val fileServer = unitTestingStack
 }

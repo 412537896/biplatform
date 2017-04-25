@@ -4,7 +4,7 @@ import com.esotericsoftware.kryo.Kryo
 import org.joda.time.DateTime
 
 /**
- * Created by souo on 2017/1/1
+ * @author souo
  */
 class KryoSerializerInit {
 

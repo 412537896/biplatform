@@ -3,8 +3,9 @@ package com.souo.biplatform.system
 import akka.actor.Cancellable
 
 import scala.concurrent.duration._
+
 /**
- * Created by souo on 2016/12/26
+ * @author souo
  */
 trait SleepAbleNode extends Node {
 

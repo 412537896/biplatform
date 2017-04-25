@@ -20,6 +20,11 @@ biplatform
 ------
 [戳这里查看接口文档](doc/api.md)
 
+system designer
+---------------
+
+![designer](doc/designer.png)
+
 
 Build and Run
 ------------

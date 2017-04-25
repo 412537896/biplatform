@@ -7,7 +7,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import net.ceedubs.ficus.Ficus._
 
 /**
- * Created by souo on 2017/1/3
+ * @author souo
  */
 trait DesignerActorSystem {
   val config: Config = ConfigFactory.load("cluster")

@@ -4,12 +4,12 @@ import java.util.UUID
 
 import akka.actor.Props
 import akka.persistence.RecoveryCompleted
-import com.souo.biplatform.model.DataSource
-import com.souo.biplatform.system.DataSourceNode.Items
-import com.souo.biplatform.system.DataSourceNode._
+import DataSourceNode._
+import com.souo.biplatform.model.{DataSource, DsServer}
+import cats.syntax.either._
 
 /**
- * Created by souo on 2017/1/24
+ * @author souo
  */
 class DataSourceNode extends Node {
   var items = Items()
@@ -39,20 +39,37 @@ class DataSourceNode extends Node {
       }
 
     case Remove(id) ⇒
-      items.items.find(_.dsId == id) match {
-        case Some(item) ⇒
-          val replyTo = sender()
+      val res = Either.fromOption[Throwable, Item](
+        items.items.find(_.dsId == id),
+        new RuntimeException(s"no such datasource $id")
+      ).map{ item ⇒
           persistAsync(Removed(id)){ evt ⇒
             updateItems(evt)
-            replyTo ! None
           }
-        case None ⇒
-          sender() ! NoSuchDS
-      }
+        }
+      sender() ! res
 
     case ListAllDS ⇒
       sender() ! items
 
+    case ListAllTables(id) ⇒
+      val res = Either.fromOption[Throwable, Item](
+        items.items.find(_.dsId == id),
+        new RuntimeException(s"no such datasource $id")
+      )
+        .flatMap{ item ⇒
+          DsServer(item.dataSource).listAllTables()
+        }
+      sender() ! res
+
+    case ListAllColumns(id, table) ⇒
+      val res = Either.fromOption[Throwable, Item](
+        items.items.find(_.dsId == id),
+        new RuntimeException(s"no such datasource $id")
+      ).flatMap{ item ⇒
+          DsServer(item.dataSource).listAllColumns(table)
+        }
+      sender() ! res
     case Get(id) ⇒
       sender() ! items.items.find(_.dsId == id)
   }
@@ -82,8 +99,9 @@ object DataSourceNode {
   case class Added(item: Item) extends Event
   case class Removed(dsId: UUID) extends Event
 
-  case object NoSuchDS
   case object ListAllDS
+  case class ListAllTables(id: UUID)
+  case class ListAllColumns(id: UUID, table: String)
   case class Get(dsId: UUID)
 
 }

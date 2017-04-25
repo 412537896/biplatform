@@ -1,23 +1,20 @@
 package com.souo.biplatform.system
 
 import java.util.UUID
-
 import akka.actor.Props
 import akka.persistence._
 import com.souo.biplatform.model.{Cube, CubeMeta, CubeSchema, Cubes}
 import org.joda.time.DateTime
-import CubeNode._
+import com.souo.biplatform.common.api.Response.error
 
 /**
-  * Created by souo on 2016/12/13
-  */
+ * @author souo
+ */
 class CubeNode extends Node {
-
+  import CubeNode._
   var cubes = Cubes()
   var snapshotEvery: Int = 10
   var receiveCmdCount = 0
-
-  override def persistenceId: String = CubeNode.name
 
   def updateCubes(evt: Event) = evt match {
     case Added(cube) ⇒
@@ -58,12 +55,13 @@ class CubeNode extends Node {
         save()
         replyTo ! meta
       }
+
     case UpdateCube(id, name, user, schema) ⇒
       cubes.get(id) match {
         case Some(cube) ⇒
           val newMeta = cube.meta.copy(
-            cubeName = name,
-            modifyBy = Some(user),
+            cubeName      = name,
+            modifyBy      = Some(user),
             latModifyTime = DateTime.now()
           )
           val newCube = Cube(newMeta, schema)
@@ -74,7 +72,7 @@ class CubeNode extends Node {
             replyTo ! newMeta
           }
         case None ⇒
-          sender() ! NoSuchCube
+          sender() ! error(s"no such cube $id")
       }
 
     case RemoveCube(id, _) ⇒
@@ -87,26 +85,26 @@ class CubeNode extends Node {
             replyTo ! None
           }
         case None ⇒
-          sender() ! NoSuchCube
+          sender() ! error(s"no such cube $id")
       }
 
     case ListAllCube ⇒
       val metaList = cubes.list.map(_.meta)
       sender() ! metaList
 
-    case GetCubeSchema(cubeId) ⇒
-      cubes.list.find(_.meta.cubeId == cubeId) match {
+    case Get(id) ⇒
+      cubes.list.find(_.meta.cubeId == id) match {
         case Some(cube) ⇒
           sender() ! cube.schema
         case None ⇒
-          sender() ! NoSuchCube
+          sender() ! error(s"no such cube $id")
       }
 
     case SaveSnapshotSuccess(metadata) ⇒
       log.info("Snapshot save successfully")
       deleteMessages(metadata.sequenceNr - 1)
       lastSnapshot = Some(metadata)
-      deleteOldSnapshots(false)
+      deleteOldSnapshots()
       receiveCmdCount = 0
 
     case SaveSnapshotFailure(metadata, cause) ⇒
@@ -115,7 +113,6 @@ class CubeNode extends Node {
 }
 
 object CubeNode {
-
   def props = Props(classOf[CubeNode])
 
   def name = "GlobalCube"
@@ -125,10 +122,12 @@ object CubeNode {
 
   case class Add(name: String, login: String, schema: CubeSchema) extends Command
 
-  case class UpdateCube(cubeId: UUID,
-                        name: String,
-                        login: String,
-                        schema: CubeSchema) extends Command
+  case class UpdateCube(
+    cubeId: UUID,
+    name:   String,
+    login:  String,
+    schema: CubeSchema
+  ) extends Command
 
   case class RemoveCube(cubeId: UUID, login: String) extends Command
 
@@ -143,13 +142,8 @@ object CubeNode {
 
   //other message
   case object ListAllCube
-
   case class Get(cubeId: UUID)
-
-  case object NoSuchCube
-
   case class CubeCreated(meta: CubeMeta)
-
   case class Snapshot(cubes: Cubes)
 
 }

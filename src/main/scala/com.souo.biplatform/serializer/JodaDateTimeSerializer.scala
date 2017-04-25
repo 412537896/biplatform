@@ -5,7 +5,7 @@ import com.esotericsoftware.kryo.{Kryo, Serializer}
 import org.joda.time.{DateTime, DateTimeZone}
 
 /**
- * Created by souo on 2017/1/1
+ * @author souo
  */
 class JodaDateTimeSerializer extends Serializer[DateTime] {
   override def write(kryo: Kryo, output: Output, t: DateTime): Unit = {

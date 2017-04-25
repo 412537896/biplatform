@@ -7,7 +7,7 @@ import slick.driver.JdbcProfile
 import slick.jdbc.JdbcBackend._
 
 /**
- * Created by souo on 2016/12/12
+ * @author souo
  */
 case class SqlDatabase(
     db:               slick.jdbc.JdbcBackend.Database,

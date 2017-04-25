@@ -9,7 +9,6 @@ biplatform
 核心功能
 =======
 * 使用scala语言开发，基于akka-http, akka-stream,akka-cluster等新技术构建。
->>>>>>> dev
 * 支持多核并发，异步无阻赛 (akka)
 * 每个用户、每张报表均作为独立的actor， 通过akka Persistence持久化各个节点的状态,并额外获得一个可自动更新的分布式缓存。
 * 对长时间未使用的节点 可以自动下线，以释放系统资源

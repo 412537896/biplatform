@@ -7,8 +7,6 @@ biplatform
 基于scala 、akka实现了一个简单的报表工具。该项目是个玩具项目，用于个人学习scala和akka。
 
 核心功能
-------
-<<<<<<< HEAD
 =======
 * 使用scala语言开发，基于akka-http, akka-stream,akka-cluster等新技术构建。
 >>>>>>> dev
@@ -20,24 +18,23 @@ biplatform
 * 流控 Back-Pressure, 避免OutOfMemory(akka-stream).
 
 接口文档
-------
+========
 [戳这里查看接口文档](doc/api.md)
-<<<<<<< HEAD
-=======
+
 
 system designer
----------------
+===============
 
 ![designer](doc/designer.png)
 
 
 Build and Run
-------------
+============
 
 * 运行`sbt clean zip` 或者 `sbt clean tgz` 在 `target/universal`目录下会生成 相应的zip或tgz包。
 
 * 复制到服务器上 解压， 在安装目录下 运行 `./bin/run.sh` 启动服务
->>>>>>> dev
+
 
 
 

@@ -1,14 +1,16 @@
 package com.souo.biplatform
 
-import cats.{SemigroupK, _}
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, _}
 import cats.implicits._
+import cats.{SemigroupK, _}
 
 /**
- * Created by souo on 2017/1/6
+ * @author souo
  */
 package object model {
+
+  type Result[A] = Either[Throwable, A]
 
   implicit val nelSemigroup: Semigroup[NonEmptyList[String]] = {
     SemigroupK[NonEmptyList].algebra[String]

@@ -3,6 +3,9 @@ import java.util.Date
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scala.util.Try
 import scalariform.formatter.preferences._
+import NativePackagerHelper._
+
+enablePlugins(JavaAppPackaging)
 
 val mySetting = Seq(
   organization := "com.souo",
@@ -32,7 +35,8 @@ compileScalastyle := org.scalastyle.sbt.ScalastylePlugin.scalastyle
 (compile in Compile) := ((compile in Compile) dependsOn compileScalastyle).value,
 scalacOptions ++= Seq(
   "-deprecation",
-  "unchecked",
+  "-unchecked",
+  "encode","utf-8",
   "-feature",
   "-language:implicitConversions",
   "-language:postfixOps",
@@ -50,20 +54,68 @@ lazy val testSettings = Seq(
     Tags.limitSum(1, Tags.Test, Tags.Untagged))
 )
 
-lazy val biplatfrom = (project in file("."))
-  .settings(mySetting: _*)
-  .settings(
-    libraryDependencies ++= Dependencies.designer,
-    buildInfoKeys := Seq[BuildInfoKey](
-      BuildInfoKey.action("buildDate")(new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date())),
-      BuildInfoKey.action("buildSha")(Try(Process("git rev-parse HEAD").!!.stripLineEnd).getOrElse("?"))),
-    compile in Compile := {
-      val compilationResult = (compile in Compile).value
-      IO.touch(target.value / "compilationFinished")
-      compilationResult
-    },
-    mainClass in Compile := Some("com.souo.biplatform.system.LocalMain"),
-    assemblyJarName in assembly := "biplatform.jar"
-  )
+mySetting
+
+libraryDependencies ++= Dependencies.designer
+
+buildInfoKeys := Seq[BuildInfoKey](
+  BuildInfoKey.action("buildDate")(new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date())),
+  BuildInfoKey.action("buildSha")(Try(Process("git rev-parse HEAD").!!.stripLineEnd).getOrElse("?"))
+)
+
+
+compile in Compile := {
+  val compilationResult = (compile in Compile).value
+  IO.touch(target.value / "compilationFinished")
+  compilationResult
+}
+
+assemblyJarName in assembly := "biplatform.jar"
+
+//skip test
+test in assembly := {}
+
+mappings in Universal := {
+  // universalMappings: Seq[(File,String)]
+  val universalMappings = (mappings in Universal).value
+  val fatJar = (assembly in Compile).value
+  // removing means filtering
+  val filtered = universalMappings filter {
+    case (file, name) => !name.endsWith(".jar")
+  }
+
+  //the fat jar
+  filtered :+ (fatJar -> ("lib/" + fatJar.getName))
+}
+
+//add our script
+mappings in Universal ++= {
+  contentOf("script").map{s => s._1 -> ("bin/" + s._2)}
+}
+
+scriptClasspath := Seq((assemblyJarName in assembly).value)
+
+//Skip packageDoc task on stage
+mappings in (Compile, packageDoc) := Seq()
+
+
+assemblyMergeStrategy in assembly := {
+  case PathList("javax", "servlet", xs@_*)          => MergeStrategy.first
+  case PathList("com", "fasterxml", xs@_*)          => MergeStrategy.first
+  case PathList("com", "google", "protobuf", xs@_*) => MergeStrategy.first
+  case PathList("org", "apache", "calcite", xs@_*) => MergeStrategy.first
+  case PathList("org", "apache", "commons", xs@_*) => MergeStrategy.first
+  case PathList("org", "slf4j", xs@_*) => MergeStrategy.first
+  case PathList(ps@_*) if ps.last endsWith ".html" => MergeStrategy.first
+  case "application.conf" => MergeStrategy.concat
+  case "unwanted.txt" => MergeStrategy.discard
+  case x =>
+    val oldStrategy = (assemblyMergeStrategy in assembly).value
+    oldStrategy(x)
+}
+
+
+addCommandAlias("zip", "universal:packageBin")
+addCommandAlias("tgz", "universal:packageZipTarball")
 
 

@@ -13,7 +13,7 @@ import io.circe.Decoder.Result
 import io.circe.generic.auto._
 
 /**
- * Created by souo on 2016/12/20
+ * @author souo
  */
 trait CirceCodec extends CirceEncoders with CirceDecoders {
   override val dateTimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
@@ -53,6 +53,11 @@ trait CirceEncoders {
     }
   }
 
+  implicit val dataSourceEncoder: Encoder[DataSource] = Encoder.instance {
+    case mysql: MySqlSource ⇒ mysql.asJson
+    case kylin: KylinSource ⇒ kylin.asJson
+  }
+
 }
 
 trait CirceDecoders {
@@ -90,6 +95,10 @@ trait CirceDecoders {
           Left(DecodingFailure("error", c.history))
       }
     }
+  }
+
+  implicit val dataSourceDecoder: Decoder[DataSource] = {
+    Decoder[KylinSource].map[DataSource](identity) or Decoder[MySqlSource].map[DataSource](identity)
   }
 
 }

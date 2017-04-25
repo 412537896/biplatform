@@ -3,23 +3,28 @@ package com.souo.biplatform.system
 import java.util.UUID
 
 import akka.actor.{ActorRef, ActorSystem, Props, Stash}
-import akka.dispatch.ControlMessage
 import akka.persistence._
-import com.souo.biplatform.model.{QueryModel, ReportQuery}
-import com.souo.biplatform.queryrouter.mysql.MysqlStorageLookup
-import com.souo.biplatform.system.ReportNode._
-/**
- * 我们为每一张报表 维护一个独立的actor
- * 通过 akka Persistent 来持久化 报表的状态
- * 对长时间未使用的报表 可以自动下线，以释放系统资源
- */
-class ReportNode extends SleepAbleNode with MysqlStorageLookup with Stash {
+import com.souo.biplatform.model.ReportQuery
+import com.souo.biplatform.system.ReportManager.WatchMe
+import com.souo.biplatform.common.api.Response.error
+
+class ReportNode(var saved: Boolean = false, var published: Boolean = false, queryRouteNode: ActorRef)
+    extends SleepAbleNode with Stash {
+
+  import ReportNode._
 
   implicit val system: ActorSystem = context.system
+
+  private val id = UUID.fromString(persistenceId)
 
   var reportQuery: Option[ReportQuery] = None
 
   override val sleepAfter: Int = durationSettings("designer.report.sleep-after")
+
+  override def preStart(): Unit = {
+    super.preStart()
+    context.parent ! WatchMe(id, self)
+  }
 
   override def receiveRecover: Receive = {
     case SnapshotOffer(metadata, snapshot: ReportQuery) ⇒
@@ -30,7 +35,7 @@ class ReportNode extends SleepAbleNode with MysqlStorageLookup with Stash {
 
   def save(): Unit = {
     log.info("Saving snapshot")
-    saveSnapshot(reportQuery.head)
+    saveSnapshot(reportQuery.get)
   }
 
   def delete(): Unit = {
@@ -38,11 +43,36 @@ class ReportNode extends SleepAbleNode with MysqlStorageLookup with Stash {
     deleteSnapshots(SnapshotSelectionCriteria.Latest)
   }
 
-  override def receiveCommand: Receive = ({
-    case Execute(_, _, queryModel) ⇒
-      log.info("start execute")
-      storage forward queryModel
+  def markSaved(): Unit = {
+    if (!saved) {
+      saved = true
+      context.parent ! ReportManager.Saved(id)
+    }
+  }
+
+  def markPublished(): Unit = {
+    if (!published) {
+      published = true
+      context.parent ! ReportManager.Published(id)
+    }
+  }
+
+  override def receiveCommand: Receive = {
+    case Execute(_, _) ⇒
+      if (reportQuery.isEmpty) {
+        sender() ! error("未定义维度和指标")
+      }
+      else {
+        log.info("start execute")
+        queryRouteNode forward reportQuery.get
+        sleep()
+      }
+
+    case Publish(_, _, query) ⇒
+      reportQuery = Some(query)
+      save()
       sleep()
+      context.become(waitToSaveReply(sender(), publishing = true))
 
     case Save(_, _, query) ⇒
       reportQuery = Some(query)
@@ -57,16 +87,29 @@ class ReportNode extends SleepAbleNode with MysqlStorageLookup with Stash {
     case Clear(_, _) ⇒
       delete()
       sleep()
-      context.become(waitToDeleteReply(sender()))
-  }: Receive) orElse super.receiveCommand
+      sender() ! DeleteSucceed
 
-  def waitToSaveReply(replyTo: ActorRef): Receive = {
+    case Sleep ⇒
+      stop()
+
+    case Delete ⇒
+      deleteOldSnapshots(stopping = true)
+      stop()
+  }
+
+  def waitToSaveReply(replyTo: ActorRef, publishing: Boolean = false): Receive = {
     case SaveSnapshotSuccess(metadata) ⇒
       log.info("Snapshot save successfully")
       lastSnapshot = Some(metadata)
-      deleteOldSnapshots(false)
+      deleteOldSnapshots()
       context.unbecome()
       unstashAll()
+      if (publishing) {
+        markPublished()
+      }
+      else {
+        markSaved()
+      }
       replyTo ! SaveSucceed
 
     case SaveSnapshotFailure(metadata, cause) ⇒
@@ -75,6 +118,7 @@ class ReportNode extends SleepAbleNode with MysqlStorageLookup with Stash {
       context.unbecome()
       unstashAll()
       replyTo ! SaveFailure(msg)
+
     case msg ⇒
       stash()
   }
@@ -101,19 +145,21 @@ class ReportNode extends SleepAbleNode with MysqlStorageLookup with Stash {
 
 object ReportNode {
 
-  def props = Props(classOf[ReportNode])
+  def props(saved: Boolean, published: Boolean, queryRouteNode: ActorRef) = {
+    Props(classOf[ReportNode], saved, published, queryRouteNode)
+  }
 
-  def name(reportId: UUID) = reportId.toString
+  def name(reportId: UUID): String = reportId.toString
 
-  trait Command extends CubeNode.Command {
+  trait Command extends ReportManager.Command {
     val reportId: UUID
   }
 
-  case class ReportControlMessage(reportId: UUID, message: ControlMessage)
-
-  case class Execute(login: String, reportId: UUID, queryModel: QueryModel) extends Command
+  case class Execute(login: String, reportId: UUID) extends Command
 
   case class Save(login: String, reportId: UUID, query: ReportQuery) extends Command
+
+  case class Publish(login: String, reportId: UUID, query: ReportQuery) extends Command
 
   case class Show(login: String, reportId: UUID) extends Command
 
@@ -124,6 +170,6 @@ object ReportNode {
   case class SaveFailure(msg: String)
 
   case object DeleteSucceed
-  case class DeleteFailure(msg: String)
 
+  case class DeleteFailure(msg: String)
 }

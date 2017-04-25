@@ -8,7 +8,7 @@ import scala.util.Try
 import cats.syntax.either._
 
 /**
- * Created by souo on 2016/12/13
+ * @author souo
  */
 abstract class Node extends PersistentActor with ActorLogging {
   def persistenceId: String = self.path.name

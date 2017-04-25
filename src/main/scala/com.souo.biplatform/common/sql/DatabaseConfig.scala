@@ -5,7 +5,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 
 /**
- * Created by souo on 2016/12/12
+ * @author souo
  */
 trait DatabaseConfig {
 

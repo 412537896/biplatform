@@ -19,3 +19,5 @@ CREATE TABLE IF NOT EXISTS snapshot (
   snapshot BLOB NOT NULL,
   PRIMARY KEY (persistence_id, sequence_number)
 );
+
+

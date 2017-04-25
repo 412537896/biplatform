@@ -4,7 +4,7 @@ import com.souo.biplatform.system.UserNode
 import akka.cluster.sharding.ShardRegion
 
 /**
- * Created by souo on 2017/1/3
+ * @author souo
  */
 object ShardUsers {
 

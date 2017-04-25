@@ -5,14 +5,16 @@ import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
 import com.souo.biplatform.system.UserNode
 
 /**
- * Created by souo on 2017/1/3
+ * @author souo
  */
 trait UserNodeShard {
   val system: ActorSystem
 
+  val queryRouteNode: ActorRef
+
   ClusterSharding(system).start(
     typeName        = ShardUsers.shardName,
-    entityProps     = UserNode.props,
+    entityProps     = UserNode.props(queryRouteNode),
     settings        = ClusterShardingSettings(system).withRole(Roles.designer),
     extractEntityId = ShardUsers.extractEntityId,
     extractShardId  = ShardUsers.extractShardId

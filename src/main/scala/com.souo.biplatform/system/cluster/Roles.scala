@@ -1,7 +1,7 @@
 package com.souo.biplatform.system.cluster
 
 /**
- * Created by souo on 2017/1/3
+ * @author souo
  */
 object Roles {
   val designer = "designer"

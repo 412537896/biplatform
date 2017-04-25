@@ -5,7 +5,7 @@ import akka.cluster.singleton._
 import com.souo.biplatform.system.CubeNode
 
 /**
- * Created by souo on 2017/1/3
+ * @author souo
  */
 trait CubeNodeSingleton {
   val system: ActorSystem

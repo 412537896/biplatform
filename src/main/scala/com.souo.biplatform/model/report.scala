@@ -3,11 +3,11 @@ package com.souo.biplatform.model
 import java.util.UUID
 
 import cats.data._
-import org.joda.time.DateTime
 import cats.implicits._
+import org.joda.time.DateTime
 
 /**
- * Created by souo on 2016/12/20
+ * @author souo
  */
 
 case class ReportMeta(
@@ -16,7 +16,9 @@ case class ReportMeta(
   createBy:      String,
   createTime:    DateTime,
   modifyBy:      Option[String],
-  latModifyTime: Option[DateTime]
+  latModifyTime: Option[DateTime],
+  saved:         Boolean,
+  published:     Boolean
 ) extends Serializable
 
 case class QueryModel(
@@ -26,7 +28,7 @@ case class QueryModel(
     filters:    Option[List[Filter]] = None
 ) {
 
-  def checkTableName = {
+  def checkTableName: ValidatedNel[String, Boolean] = {
     if (tableName.isEmpty) {
       Validated.invalid("表名不能为空")
     }
@@ -35,7 +37,7 @@ case class QueryModel(
     }
   }.toValidatedNel
 
-  def checkDimensionsAndMeasures = {
+  def checkDimensionsAndMeasures: ValidatedNel[String, Boolean] = {
     if (dimensions.isEmpty || measures.isEmpty) {
       Validated.invalid("至少指定一个维度和一个指标")
     }

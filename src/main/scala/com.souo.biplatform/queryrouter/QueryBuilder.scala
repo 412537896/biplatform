@@ -2,9 +2,9 @@ package com.souo.biplatform.queryrouter
 
 import cats.free.Free
 import cats.{Id, ~>}
-import com.souo.biplatform.model.{Dimension, Filter, Measure, QueryModel}
+import com.souo.biplatform.model._
 /**
- * Created by souo on 2017/1/4
+ * @author souo
  */
 trait QueryBuilder[M, D, F, T] {
   import QueryBuilder._
